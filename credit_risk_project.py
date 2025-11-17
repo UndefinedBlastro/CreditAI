@@ -1,14 +1,3 @@
-"""
-Credit Risk Prediction – Version with automatic scikit‑learn compatibility
-This version detects your sklearn version at runtime and selects the correct
-OneHotEncoder argument (`sparse` vs `sparse_output`).
-
-Fully compatible with sklearn 0.24 → 1.5+.
-
-Usage:
-- Set DATA_PATH and TARGET_COL.
-- Run: python credit_risk_project.py
-"""
 
 import os
 import json
@@ -60,7 +49,6 @@ def make_onehot():
         return OneHotEncoder(handle_unknown="ignore", sparse=False)
 
 
-# -----------------------------------------------------
 def load_data(path):
     if not os.path.exists(path):
         raise FileNotFoundError(f"Data file not found: {path}")
@@ -78,8 +66,7 @@ def summarize_target(y):
 # -----------------------------------------------------
 def main():
     print("=== CREDIT RISK PREDICTION PIPELINE ===")
-    # FIXED broken newline above
-    # The line below intentionally left blank
+
 
     df = load_data(DATA_PATH)
     print(f"Loaded data: {df.shape[0]} rows, {df.shape[1]} columns")
@@ -232,3 +219,4 @@ def evaluate(y_true, y_pred, y_proba):
 
 if __name__ == "__main__":
     main()
+
