@@ -193,9 +193,13 @@ def main():
     with open(RESULTS_JSON, "w") as f:
         json.dump(results, f, indent=2)
     print(f"Metrics saved → {RESULTS_JSON}")
+        # OPTIONAL: manual user prediction
+    ask = input("\nDo you want to enter a new person's data? (y/n): ").strip().lower()
+    if ask == "y":
+        predict_from_console(MODEL_OUTPUT, X)
 
     print("Done.")
-
+    
 
 # -----------------------------------------------------
 def evaluate(y_true, y_pred, y_proba):
@@ -215,6 +219,39 @@ def evaluate(y_true, y_pred, y_proba):
         "confusion_matrix": cm.tolist(),
         "report": classification_report(y_true, y_pred, output_dict=True),
     }
+
+def predict_from_console(model_path, feature_df):
+    if not os.path.exists(model_path):
+        raise FileNotFoundError(f"Trained model not found: {model_path}")
+
+    model = joblib.load(model_path)
+
+    print("\n=== MANUAL INPUT PREDICTION ===")
+
+    user_data = {}
+
+    for col in feature_df.columns:
+        val = input(f"Enter '{col}': ")
+
+        try:
+            val = float(val)
+        except ValueError:
+            pass  
+
+        user_data[col] = val
+
+    # Convert to DataFrame with one row
+    inp = pd.DataFrame([user_data])
+
+    # Predict
+    proba = model.predict_proba(inp)[0][1]
+    pred = model.predict(inp)[0]
+
+    label = "DEFAULT" if pred == 1 else "REPAY"
+
+    print("\n=== PREDICTION RESULT ===")
+    print(f"Prediction: {label}")
+    print(f"Probability of default: {proba:.4f}")
 
 
 if __name__ == "__main__":
