@@ -193,10 +193,14 @@ def main():
     with open(RESULTS_JSON, "w") as f:
         json.dump(results, f, indent=2)
     print(f"Metrics saved → {RESULTS_JSON}")
-        # OPTIONAL: manual user prediction
-    ask = input("\nDo you want to enter a new person's data? (y/n): ").strip().lower()
-    if ask == "y":
-        predict_from_console(MODEL_OUTPUT, X)
+    PREDICT_FILE = "test.csv"  
+
+    if os.path.exists(PREDICT_FILE):
+        print("\nRunning predictions on external CSV file...")
+        predict_from_csv(MODEL_OUTPUT, PREDICT_FILE)
+    else:
+        print("\nNo external prediction file found; skipping.")
+
 
     print("Done.")
     
@@ -220,38 +224,30 @@ def evaluate(y_true, y_pred, y_proba):
         "report": classification_report(y_true, y_pred, output_dict=True),
     }
 
-def predict_from_console(model_path, feature_df):
+def predict_from_csv(model_path, csv_path):
+    """Load a CSV of new applicants and predict repayment/default."""
     if not os.path.exists(model_path):
         raise FileNotFoundError(f"Trained model not found: {model_path}")
+    if not os.path.exists(csv_path):
+        raise FileNotFoundError(f"Prediction CSV not found: {csv_path}")
 
     model = joblib.load(model_path)
 
-    print("\n=== MANUAL INPUT PREDICTION ===")
+    new_df = pd.read_csv(csv_path)
+    print(f"\nLoaded prediction file: {new_df.shape[0]} rows")
 
-    user_data = {}
+    proba = model.predict_proba(new_df)[:, 1]
+    pred = model.predict(new_df)
 
-    for col in feature_df.columns:
-        val = input(f"Enter '{col}': ")
+    out = new_df.copy()
+    out["default_probability"] = proba
+    out["prediction"] = pred  # 1 = default, 0 = repay
 
-        try:
-            val = float(val)
-        except ValueError:
-            pass  
+    save_path = "prediction_results.csv"
+    out.to_csv(save_path, index=False)
 
-        user_data[col] = val
+    print(f"Predictions saved → {save_path}")
 
-    # Convert to DataFrame with one row
-    inp = pd.DataFrame([user_data])
-
-    # Predict
-    proba = model.predict_proba(inp)[0][1]
-    pred = model.predict(inp)[0]
-
-    label = "DEFAULT" if pred == 1 else "REPAY"
-
-    print("\n=== PREDICTION RESULT ===")
-    print(f"Prediction: {label}")
-    print(f"Probability of default: {proba:.4f}")
 
 
 if __name__ == "__main__":
